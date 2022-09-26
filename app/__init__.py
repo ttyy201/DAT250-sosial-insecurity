@@ -71,7 +71,6 @@ def query_db(query, one=False):
     db.commit()
     return (rv[0] if rv else None) if one else rv
 
-# TODO: Add more specific queries to simplify code
 
 # automatically called when application is closed, and closes db connection
 @app.teardown_appcontext

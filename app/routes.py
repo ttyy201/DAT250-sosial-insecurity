@@ -1,6 +1,5 @@
-#from ast import Not
 from urllib.request import Request
-from flask import render_template, flash, redirect, url_for, request, session
+from flask import Flask, render_template, flash, redirect, url_for, request, session, g
 from flask_login import login_user, current_user, logout_user, login_required
 from app import allowed_file, app, get_db, load_user, query_db
 from app.forms import IndexForm, PostForm, FriendsForm, ProfileForm, CommentsForm
@@ -46,6 +45,17 @@ def index():
             return redirect(url_for('stream'))
         else:
             flash('Sorry, wrong username or password!')
+
+    elif form.register.is_submitted() and form.register.submit.data:
+        db = get_db()
+        curs = db.cursor()
+        curs.execute("SELECT * FROM Users where username = (?)",[form.login.username.data])
+        if curs.fetchone() is not None:
+            query_db('INSERT INTO Users (username, first_name, last_name, password) VALUES("{}", "{}", "{}", "{}");'.format(form.register.username.data, form.register.first_name.data,
+             form.register.last_name.data, password))
+            return redirect(url_for('index'))
+        else:
+            flash("Username already exists")
 
     elif form.register.is_submitted() and form.register.submit.data and form.register.first_name.validate(request.form) and form.register.username.validate(request.form) and form.register.password.validate(request.form):
         password = form.register.password.data
