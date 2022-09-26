@@ -36,37 +36,53 @@ def index():
         curs.execute("SELECT * from Users where username = (?)",[form.login.username.data])
         user = list(curs.fetchone())
         Us = load_user(user[0])
+        curs.close()
+        db.commit()
+        # Check logginattampts, locks the account for x time after x attempts.
+        if Us.logginatemt > 3 and datetime.strptime(Us.lastloggin, '%Y-%m-%d %H:%M:%S.%f') > datetime.now()-timedelta(minutes=1):
+            flash('To many attemts try again in 1 min.')
+
         if user == None:
             flash('Sorry, this user does not exist!')
+
+        # Check userloggin attempt for a user.
         elif form.login.username.data == Us.username and check_password_hash(Us.password, form.login.password.data):
             session["username"] = Us.username
             login_user(Us, remember=form.login.remember_me.data)
+            Us.lastloggin = datetime.now()
+            query_db('UPDATE Users SET lastloggin=\'{}\' WHERE username="{}" ;' .format(Us.lastloggin, Us.username))
+            Us.lastloggin = 0
+            query_db('UPDATE Users SET lastloggin=\'{}\' WHERE username="{}" ;' .format(Us.lastloggin, Us.username))
             flash('Login succsessfull')
             return redirect(url_for('stream'))
+        # Add 1 logginatemt if nessesary
         else:
+            Us.logginatemt = Us.logginatemt + 1
+            query_db('UPDATE Users SET lastloggin=\'{}\' WHERE username="{}" ;' .format(Us.lastloggin, Us.username))
             flash('Sorry, wrong username or password!')
 
-    elif form.register.is_submitted() and form.register.submit.data:
+    # If all the required fields in register is valid it adds a new user.
+    elif form.register.is_submitted() and form.register.submit.data and form.register.first_name.validate(request.form) and form.register.username.validate(request.form) and form.register.password.validate(request.form):
         db = get_db()
         curs = db.cursor()
-        curs.execute("SELECT * FROM Users where username = (?)",[form.login.username.data])
-        if curs.fetchone() is not None:
-            query_db('INSERT INTO Users (username, first_name, last_name, password) VALUES("{}", "{}", "{}", "{}");'.format(form.register.username.data, form.register.first_name.data,
-             form.register.last_name.data, password))
-            return redirect(url_for('index'))
-        else:
-            flash("Username already exists")
-
-    elif form.register.is_submitted() and form.register.submit.data and form.register.first_name.validate(request.form) and form.register.username.validate(request.form) and form.register.password.validate(request.form):
+        curs.execute("SELECT * FROM Users where username = (?)",[form.register.username.data])
+        curs.close()
+        db.commit()
         password = form.register.password.data
         passord = generate_password_hash(password, method="sha256")
         if form.register.password.data != form.register.confirm_password.data:
             flash('Password did not match.')
             return redirect(url_for('index'))
-        query_db('INSERT INTO Users (username, first_name, last_name, password) VALUES("{}", "{}", "{}", "{}");'.format(form.register.username.data, form.register.first_name.data,
-         form.register.last_name.data, passord))
-        flash('New user created')
-        return redirect(url_for('index'))
+
+        # Checks if a user already exist.
+        elif curs.fetchone() is not None:
+            flash("Username already exists")
+            return redirect(url_for('index'))
+        else:
+            query_db('INSERT INTO Users (username, first_name, last_name, password, lastloggin) VALUES("{}", "{}", "{}", "{}", "{}" );'.format(form.register.username.data, form.register.first_name.data,
+            form.register.last_name.data, passord, datetime.now))
+            flash('New user created')
+            return redirect(url_for('index'))
     return render_template('index.html', title='Welcome', form=form)
 
 

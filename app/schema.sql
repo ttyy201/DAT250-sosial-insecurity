@@ -18,6 +18,8 @@ CREATE TABLE [Users] (
   first_name VARCHAR,
   last_name VARCHAR,
   [password] VARCHAR,
+  logginatemt INTEGER Default 0,
+  lastloggin VARCHAR,
   education VARCHAR DEFAULT 'Unknown',
   employment VARCHAR DEFAULT 'Unknown',
   music VARCHAR DEFAULT 'Unknown',

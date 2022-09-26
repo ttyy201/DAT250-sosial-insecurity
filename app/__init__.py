@@ -17,11 +17,13 @@ app.config.from_object(Config.ALLOWED_EXTENSION)
 
 
 class User(UserMixin):
-    def __init__(self, id, username, password):
+    def __init__(self, id, username, password, logginatemt, lastloggin):
         self.id = int(id)
         self.username = username
         self.password = password
+        self.logginatemt = int(logginatemt)
         self.authenticated = False
+        self.lastloggin = lastloggin
     def is_active(self):
         return self.is_active()
     def is_anonymous(self):
@@ -42,7 +44,7 @@ def load_user(user_id):
     if rv is None:
         return None
     else:
-        return User(int(rv[0]),rv[1],rv[4])
+        return User(int(rv[0]),rv[1],rv[4],rv[5],rv[6])
 
 
 
