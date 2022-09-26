@@ -16,7 +16,6 @@ app.config.from_object(Config)
 app.config.from_object(Config.ALLOWED_EXTENSION)
 
 
-# TODO: Handle login management better, maybe with flask_login?
 class User(UserMixin):
     def __init__(self, id, username, password):
         self.id = int(id)

@@ -1,7 +1,6 @@
 #from ast import Not
 from urllib.request import Request
-from wsgiref import validate
-from flask import Flask, render_template, flash, redirect, url_for, request, session, g
+from flask import render_template, flash, redirect, url_for, request, session
 from flask_login import login_user, current_user, logout_user, login_required
 from app import allowed_file, app, get_db, load_user, query_db
 from app.forms import IndexForm, PostForm, FriendsForm, ProfileForm, CommentsForm
@@ -11,7 +10,6 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from config import Config
 import os
 
 limiter = Limiter(
@@ -28,7 +26,7 @@ limiter = Limiter(
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/index', methods=['GET', 'POST'])
-@limiter.limit("1000 per minute")
+@limiter.limit("15 per minute")
 def index():
     form = IndexForm()
     if current_user.is_authenticated:
@@ -81,6 +79,8 @@ def stream():
     posts = query_db('SELECT p.*, u.*, (SELECT COUNT(*) FROM Comments WHERE p_id=p.id) AS cc FROM Posts AS p JOIN Users AS u ON u.id=p.u_id WHERE p.u_id IN (SELECT u_id FROM Friends WHERE f_id={0}) OR p.u_id IN (SELECT f_id FROM Friends WHERE u_id={0}) OR p.u_id={0} ORDER BY p.creation_time DESC;'.format(user['id']))
     return render_template('stream.html', title='Stream', username=session.get("username", None), form=form, posts=posts)
 
+# Checks if the user is logged in from last session, and
+# login if the is true.
 @app.before_request
 def before_request():
     session.permanent=True
